@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Kubernetes (execCmd, copy, getPodsWithName, podName, podLabels, listNamespaces, namespaceName) where
+module Kubernetes (execCmd, copy, getPodsWithName, podName, podLabels, listNamespaces, namespaceName, namespaceExists, createService, createStatefulSet) where
 
 import qualified Kubernetes.OpenAPI.API.CoreV1 as CoreV1
-import Kubernetes.OpenAPI (v1NamespaceListItems, V1NamespaceList(..), V1Namespace(..), LabelSelector(..), V1ObjectMeta(..), V1PodList(..), V1Pod(..), Command (..), Tty(..), Stdin(..), Stdout(..), Stderr(..), MimeAny(..), Name(Name), Namespace(Namespace), Accept(..), MimeJSON(..), MimePlainText(..))
+import qualified Kubernetes.OpenAPI.API.AppsV1 as AppsV1
+import Kubernetes.OpenAPI
 import Kubernetes.OpenAPI.Client (dispatchMime, dispatchLbs, _toInitRequest, modifyInitRequest, dispatchInitUnsafe, InitRequest(InitRequest), MimeResult(MimeResult), MimeError(mimeError))
 import Kubernetes.OpenAPI.Core ((-&-), KubernetesRequest(rParams))
 import Data.Text (Text, pack, unpack)
@@ -272,4 +273,41 @@ namespaceName p = fromJust $ do
   return $ unpack name
 
 
+namespaceExists :: String -> IO (Either String ())
+namespaceExists name = do
+  ns' <- listNamespaces
+  let exists = do
+              ns <- ns'
+              let names = map namespaceName ns
+              if (elem name names) then return True else return False
+  case exists of
+    Right True -> return $ Right ()
+    Right False -> return $ Left $ (printf "Namespace %s does not exist" name :: String)
+    Left e -> return $ Left e
+
+
 -- TODO create a deployment
+
+
+
+createStatefulSet :: String -> V1StatefulSet -> IO (Either String (V1StatefulSet))
+createStatefulSet ns ss = do
+  (mgr, kcfg) <- kubeClientConfig
+  let namespace = Namespace $ pack ns
+  res0 <- dispatchMime mgr kcfg (AppsV1.createNamespacedStatefulSet (ContentType MimeJSON) (Accept MimeJSON) ss namespace)
+  print res0
+  let res = case res0 of
+        MimeResult (Left err) _ -> Left $ mimeError err
+        MimeResult (Right v1s) _ -> Right v1s
+  return res
+
+createService :: String -> V1Service -> IO (Either String (V1Service))
+createService ns service = do
+  (mgr, kcfg) <- kubeClientConfig
+  let namespace = Namespace $ pack ns
+  res0 <- dispatchMime mgr kcfg (CoreV1.createNamespacedService (ContentType MimeJSON) (Accept MimeJSON) service namespace)
+  print res0
+  let res = case res0 of
+          MimeResult (Left err) _ -> Left $ mimeError err
+          MimeResult (Right v1s) _ -> Right v1s
+  return res

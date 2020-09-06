@@ -1,0 +1,15 @@
+templates:
+- buildContainer: someURL
+  deployContainer: someOtherURL
+  name: Scala
+  filesToCopy:
+  - src
+- buildContainer: someURL
+  deployContainer: someOtherURL
+  name: NodeJS
+  
+name: nodejs
+author: Rob Povey
+projects:
+- name: foobar
+  template: NodeJS

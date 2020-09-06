@@ -10,6 +10,10 @@ import qualified Cmd.Namespace as Namespace
 import qualified Cmd.Project as Project
 import qualified Cmd.Push as Push
 
+import Config
+import Environment
+import Project
+
 import qualified Kubernetes as K
 
 
@@ -42,13 +46,24 @@ parse = do  (opts,runCmd) <-
                  addCommand "project" "Delete a K8's Namespace" Project.runCmd $ simpleParser Project.options
                    do addCommand "set" "set project configuration values" Project.set (strArgument (metavar "value" <> help "namespace=value name=value etc."))
                       addCommand "list" "list project configurations" (const Project.list) (pure ())
-                 addCommand "push" "Delete a K8's Namespace" Push.push Push.options
+                 addCommand "push" "Push project to K8's" Push.push Push.options
                  
             runCmd
 
 
 main :: IO ()
 main = do
+  config <- readConfig
+  let project = head $ projects config
+  env <- readEnvironment
+  let service = serviceFromProject env project
+  K.createService (namespace env) service
+  let ss = statefulSetFromProject env project
+  K.createStatefulSet (namespace env) ss
+
+
+
+
   -- Right res <- K.execCmd "odo" "nodejs-847f6f9bbb-lbwct" ["cat", "/etc/os-release"]
   -- putStrLn res
 

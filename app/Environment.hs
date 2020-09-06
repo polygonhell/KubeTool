@@ -3,7 +3,6 @@ module Environment (readEnvironment, writeEnvironment, updateEnvironment, Enviro
 
 import Data.Yaml (ParseException, ToJSON, FromJSON, decodeFileThrow, decodeFileEither, encodeFile)
 import GHC.Generics
-import Project
 import Template
 import Data.Maybe (fromMaybe)
 
