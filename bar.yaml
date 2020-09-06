@@ -1,0 +1,12 @@
+templates:
+- buildContainer: someURL
+  deployContainer: someOtherURL
+  name: Scala
+namespace: foo
+name: Foobar
+author: null
+projects:
+- name: project1
+  template: Scala
+- name: project2
+  template: NodeJS
