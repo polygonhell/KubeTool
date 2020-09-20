@@ -7,16 +7,16 @@ import Environment
 import Kubernetes.OpenAPI
 import Data.Map (fromList, Map)
 import Data.Text (Text, pack)
+import Template(Template)
+import qualified Template as T
 
 data Project = Project { name :: !String
-                       , template :: !String
+                       , template :: !String                       
+                       , ports :: ![Int]
                        } deriving (Show, Generic)
 
 instance FromJSON Project
 instance ToJSON Project
-
-applicationName :: Text
-applicationName = pack "kub"
 
 
 
@@ -33,17 +33,17 @@ validateProject env pr = do
 labels :: Environment -> Project -> Map String Text
 labels env prj = fromList [ ("app", nme)
                           , ("app.kubernetes.io/name", nme)
-                          , ("app.kubernetes.io/managed-by", applicationName)
+                          , ("app.kubernetes.io/managed-by", pack managedBy)
                           ]
   where
     nme = pack $ name prj
 
 
 
-statefulSetFromProject :: Environment -> Project -> V1StatefulSet
-statefulSetFromProject env pr = mkV1StatefulSet { v1StatefulSetMetadata = Just metadata
-                                                , v1StatefulSetSpec = Just spec                                            
-                                                }
+statefulSetFromProject :: Environment -> Project -> Template -> V1StatefulSet
+statefulSetFromProject env pr t = mkV1StatefulSet { v1StatefulSetMetadata = Just metadata
+                                                  , v1StatefulSetSpec = Just spec                                            
+                                                  }
   where
     nme = pack $ name pr
     labs = labels env pr
@@ -54,9 +54,11 @@ statefulSetFromProject env pr = mkV1StatefulSet { v1StatefulSetMetadata = Just m
     selector = mkV1LabelSelector  { v1LabelSelectorMatchLabels = Just labs
                                   }
 
-    containerPorts = [mkV1ContainerPort 80]
-    runContainer = (mkV1Container (pack "podName")) { v1ContainerImage = Just $ pack "nginx"
-                                                    , v1ContainerName = pack "nginx"
+    
+    containerPorts = map mkV1ContainerPort (T.ports t)
+    containerImage = T.buildContainer t
+    runContainer = (mkV1Container (pack "podName")) { v1ContainerImage = Just $ pack containerImage
+                                                    , v1ContainerName = pack "run"
                                                     , v1ContainerPorts = Just $ containerPorts
                                                     }
     podSpec = mkV1PodSpec [runContainer]

@@ -1,2 +1,4 @@
 .stack-work/
+project/node_modules/
+project/build/
 *~

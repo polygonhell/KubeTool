@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Kubernetes (execCmd, copy, getPodsWithName, podName, podLabels, listNamespaces, namespaceName, namespaceExists, createService, createStatefulSet) where
+module Kubernetes (managedBy, execCmd, copy, getPodsWithName, podName, podLabels, listNamespaces, namespaceName, namespaceExists, createService, createStatefulSet) where
 
 import qualified Kubernetes.OpenAPI.API.CoreV1 as CoreV1
 import qualified Kubernetes.OpenAPI.API.AppsV1 as AppsV1
@@ -168,7 +168,7 @@ execCmd namespaceStr podName cmd = do
 
 
 managedBy :: String
-managedBy="odo"
+managedBy="kc"
 
 -- Get the pod associated with a projects deployment
 getPodsWithName :: String -> String -> IO (Either String [V1Pod])
@@ -218,7 +218,7 @@ copy namespaceStr podName baseDir files dest = do
         (CI.mk "Upgrade", "websocket")
       ],
       -- add the command to the query string
-      queryString = B.append (queryString r) $ toCommandQuery ["tar", "xvmf", "-", "-C", "/project"]
+      queryString = B.append (queryString r) $ toCommandQuery ["tar", "xvmf", "-", "-C", dest]
     }
 
   initRequest' <- _toInitRequest kcfg request
@@ -228,7 +228,7 @@ copy namespaceStr podName baseDir files dest = do
   resp <- responseOpen rq mgr
 
   -- Create a tar file from the requested files
-  entries <- Tar.pack "/home/rob/tmp" ["t1"]
+  entries <- Tar.pack baseDir files
   let bytes = toStrict $ Tar.write entries
   -- Wrap in a websocket request and prepend 00 to designate stdin
   let lenBs = toStrict $ toLazyByteString $ word64BE (fromIntegral (B.length bytes + 1) :: Word64)
@@ -285,8 +285,6 @@ namespaceExists name = do
     Right False -> return $ Left $ (printf "Namespace %s does not exist" name :: String)
     Left e -> return $ Left e
 
-
--- TODO create a deployment
 
 
 

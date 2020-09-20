@@ -53,13 +53,13 @@ parse = do  (opts,runCmd) <-
 
 main :: IO ()
 main = do
-  config <- readConfig
-  let project = head $ projects config
-  env <- readEnvironment
-  let service = serviceFromProject env project
-  K.createService (namespace env) service
-  let ss = statefulSetFromProject env project
-  K.createStatefulSet (namespace env) ss
+  -- config <- readConfig
+  -- let project = head $ projects config
+  -- env <- readEnvironment
+  -- let service = serviceFromProject env project
+  -- K.createService (namespace env) service
+  -- let ss = statefulSetFromProject env project
+  -- K.createStatefulSet (namespace env) ss
 
 
 

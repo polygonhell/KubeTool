@@ -2,11 +2,17 @@ templates:
 - buildContainer: someURL
   deployContainer: someOtherURL
   name: Scala
-- buildContainer: someURL
+  ports:
+    - 8080
+- buildContainer: polygonhell/nodejs-kt:latest
   deployContainer: someOtherURL
+  ports:
+    - 3000
+  rundevCommand: "npm i && npm run dev"
   name: NodeJS
 name: nodejs
 author: Rob Povey
 projects:
 - name: foobar
   template: NodeJS
+  ports: []
