@@ -10,11 +10,15 @@ import qualified Cmd.Namespace as Namespace
 import qualified Cmd.Project as Project
 import qualified Cmd.Push as Push
 
+import Directory
+import qualified Directory as D
+
 import Config
 import Environment
 import Project
 
 import qualified Kubernetes as K
+import Text.Printf (printf)
 
 
 -- kube :: IO ()
@@ -51,8 +55,19 @@ parse = do  (opts,runCmd) <-
             runCmd
 
 
+
 main :: IO ()
 main = do
+  -- files <- getFiles [] ["tsconfig.json", "package.json", "package-lock.json", "app"]
+  -- print files
+  -- md5s <-  computeMd5s files
+  -- mapM (\(p, h) -> putStrLn (printf "%s %s" h p)) md5s
+
+  -- md5s' <- runFindMd5 [] ["tsconfig.json", "package.json", "package-lock.json", "app"]
+  -- mapM (\x -> putStrLn (printf "%s %s" (D.name x) (md5 x))) md5s'
+
+
+
   -- config <- readConfig
   -- let project = head $ projects config
   -- env <- readEnvironment

@@ -40,8 +40,12 @@ dependencies:
 - text
 - yaml
 - directory
+- filepath
+- regex-tdfa
+- cryptohash-md5
 - case-insensitive
 - tar
+- process
 
 
 library:

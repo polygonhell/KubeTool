@@ -2,13 +2,20 @@ templates:
 - buildContainer: someURL
   deployContainer: someOtherURL
   name: Scala
+  runDevCommand: "npm i && npm run dev"
   ports:
     - 8080
+  sourceFiles: []
 - buildContainer: polygonhell/nodejs-kt:latest
   deployContainer: someOtherURL
   ports:
     - 3000
-  rundevCommand: "npm i && npm run dev"
+  runDevCommand: "npm i && npm run dev"
+  sourceFiles:
+    - app
+    - package.json
+    - package-lock.json
+    - tsconfig.json
   name: NodeJS
 name: nodejs
 author: Rob Povey

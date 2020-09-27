@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 86c4fe325551795e4229936351a4e72f87a78402c2d2c3b66256a5ca1be41712
+-- hash: bdead9f7fec77bce559f49df5615fb7d3ae1631d8e4a710e5e54a3552edfff5f
 
 name:           kube
 version:        0.1.0.0
@@ -39,13 +39,17 @@ library
     , bytestring
     , case-insensitive
     , containers
+    , cryptohash-md5
     , directory
+    , filepath
     , http-client
     , http-types
     , kubernetes-client >=0.2.0.0 && <0.3
     , kubernetes-client-core
     , optparse-applicative >=0.14 && <2
     , optparse-simple >=0.1.1.2
+    , process
+    , regex-tdfa
     , stm
     , tar
     , text
@@ -62,6 +66,7 @@ executable kube-exe
       Cmd.Project
       Cmd.Push
       Config
+      Directory
       Environment
       ErrorResponse
       KubeConfig
@@ -79,7 +84,9 @@ executable kube-exe
     , bytestring
     , case-insensitive
     , containers
+    , cryptohash-md5
     , directory
+    , filepath
     , http-client
     , http-types
     , kube
@@ -87,6 +94,8 @@ executable kube-exe
     , kubernetes-client-core
     , optparse-applicative >=0.14 && <2
     , optparse-simple >=0.1.1.2
+    , process
+    , regex-tdfa
     , stm
     , tar
     , text
@@ -109,7 +118,9 @@ test-suite kube-test
     , bytestring
     , case-insensitive
     , containers
+    , cryptohash-md5
     , directory
+    , filepath
     , http-client
     , http-types
     , kube
@@ -117,6 +128,8 @@ test-suite kube-test
     , kubernetes-client-core
     , optparse-applicative >=0.14 && <2
     , optparse-simple >=0.1.1.2
+    , process
+    , regex-tdfa
     , stm
     , tar
     , text

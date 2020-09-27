@@ -61,8 +61,8 @@ readBlock con = do
   byteStr <- connectionRead con 
   let bytes = B.unpack byteStr
 
-  putStrLn $ hex byteStr
-  putStrLn $ C8.unpack byteStr
+  -- putStrLn $ hex byteStr
+  -- putStrLn $ C8.unpack byteStr
 
   let opcode = (head bytes) .&. 0xf
 
@@ -84,9 +84,9 @@ readBlock con = do
                             d = drop 6 bytes
                           _ -> (fromIntegral l1, drop 2 bytes)
 
-      putStrLn $ printf "Reading len %d bytes from data containing %d bytes" len (length bytes')
+      -- putStrLn $ printf "Reading len %d bytes from data containing %d bytes" len (length bytes')
       moreBytes <- readMore (len - length bytes') con
-      putStrLn $ printf "Read additional %d bytes" (B.length moreBytes)
+      -- putStrLn $ printf "Read additional %d bytes" (B.length moreBytes)
 
       let dataBytes = B.append (B.pack bytes') moreBytes
       -- putStrLn $ printf "Reading len %d bytes from data containing %d bytes" len (B.length dataBytes)
@@ -97,7 +97,7 @@ readBlock con = do
 
       let resBytes = B.take len dataBytes
 
-      putStrLn $ hex resBytes
+      -- putStrLn $ hex resBytes
 
       case fin of
         True -> return $ Bin resBytes
@@ -125,7 +125,7 @@ getOutput con = do
 -- Other issues - with Command optional arg not allowing multiple instantiations
 execCmd :: String -> String -> [String] -> IO (Either String String)
 execCmd namespaceStr podName cmd = do
-  -- putStrLn "execCmd"
+  putStrLn "execCmd"
   (mgr, kcfg) <- kubeClientConfig
   let name = Name (pack podName)
   let namespace = Namespace (pack namespaceStr)

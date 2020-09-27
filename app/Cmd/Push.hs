@@ -5,9 +5,11 @@ module Cmd.Push where
 import Config (Config (..), readConfig)
 import Control.Concurrent (threadDelay)
 import Control.Monad (join)
-import Data.List (find, intercalate)
+import Data.Either (fromRight)
+import Data.List (find, intercalate, intersect, (\\))
 import Data.Maybe (fromJust)
 import Data.Text (unpack)
+import qualified Directory as D
 import Environment (Environment (..), readEnvironment)
 import Kubernetes
 import Kubernetes.OpenAPI (V1Pod (v1PodSpec), v1ObjectMetaName, v1PodMetadata, v1PodStatus, v1PodStatusPhase)
@@ -58,7 +60,7 @@ pushDevContainer env config proj template = do
           pushDevContainer env config proj template
     Right [] -> do
       -- Need to create the Stateful Set and Service
-      let serviceDef = serviceFromProject env proj
+      let serviceDef = serviceFromProject env proj template
       putStrLn "Creating the Service"
       service <- createService ns serviceDef
       let ssDef = statefulSetFromProject env proj template
@@ -73,25 +75,68 @@ pushDevContainer env config proj template = do
     Right _ -> return $ Left "More than one build pod found"
     Left err -> return $ Left err
 
-filesToCopy :: Project -> [String]
-filesToCopy _ = ["app", "package.json", "tsconfig.json"]
+filesToCopy :: Project -> Template -> (String, String) -> IO (Either String ([String], [String]))
+filesToCopy _ t (ns, podName) = do
+  -- get the local file list
+  let srcs = T.sourceFiles t
+  local <- D.runFindMd5 [] srcs
+  fc <- D.findCommand "-exec md5sum {} \\;" [] srcs
+  findRes <- execCmd ns podName ["bash", "-c", "cd /project && " ++ fc]
+  let remote = fmap D.packageFindResult findRes
+  let files = do
+        r <- remote
+        let toDelete = (map D.name r) \\ (map D.name local)
+        let toCopy = map D.name $ local \\ (r `intersect` local)
+        return (toDelete, toCopy)
+
+  return files
+
+-- collapse :: Either a (IO (Either a b)) -> IO (Either a b)
+collapse :: (Traversable m, Monad m, Monad f) => m (f (m a)) -> f (m a)
+collapse x = fmap join $ sequence x
 
 pushProject :: Environment -> Config -> Project -> Template -> IO (Either String String)
 pushProject env config proj template = do
   putStrLn $ printf "Pushing project"
   let ns = namespace env
   baseDir <- getCurrentDirectory
-  let files = filesToCopy proj
-  let dest = "/project"
   podName <- pushDevContainer env config proj template
-  copied <- fmap join $ sequence $ fmap (\x -> copy ns x baseDir files dest) podName
+  files <- collapse do
+    pod <- podName
+    return $ filesToCopy proj template (ns, pod)
+  let dest = "/project"
 
-  print copied
+  -- delete the files removed locally
+  -- TODO deal with filenames with spaces etc
+  deleted <- case files of
+    Left _ -> return $ Right ()
+    Right ([], _) -> return $ Right ()
+    Right (toDelete, _) -> do
+      putStrLn $ printf "deleting container files\n  %s" (intercalate "\n  " toDelete)
+      sequence do
+        pod <- podName
+        let cmd = printf "echo \"%s\" | xargs rm" $ intercalate " " toDelete :: String
+        return $ fmap (\x -> ()) (execCmd ns pod ["bash", "-c", "cd /project && " ++ cmd])
+
+  -- copy the changed files
+  copied <- case files of
+    Left _ -> return $ Right ()
+    Right (_, []) -> return $ Right ()
+    Right (_, toCopy) -> do
+      putStrLn $ printf "copying changed files to container\n  %s" (intercalate "\n  " toCopy)
+      sequence do
+        pod <- podName
+        return $ fmap (\x -> ()) $ copy ns pod baseDir toCopy dest
 
   -- todo build and restart
-  ran <- fmap join $ sequence $ fmap (\x -> execCmd ns x ["bash", "-c", "echo 'FOO=1234 env' > cmd && supervisorctl -s unix:///tmp/supervisor.sock start run"]) podName
+  let runCmd = printf "echo '%s' > cmd && supervisorctl -s unix:///tmp/supervisor.sock start run" ("cd /project && " ++ (T.runDevCommand template)) :: String
+  ran <- collapse $ fmap (\x -> execCmd ns x ["bash", "-c", runCmd]) podName
+
+  print ran
+
 
   return $ do
+    deleted
     copied
     ran
 

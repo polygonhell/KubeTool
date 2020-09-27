@@ -7,6 +7,8 @@ data Template = Template { name :: !String
                          , buildContainer :: !String
                          , deployContainer :: !String
                          , ports :: ![Int]
+                         , sourceFiles :: ![String]
+                         , runDevCommand :: !String
                          } deriving (Show, Generic)
 
 instance FromJSON Template

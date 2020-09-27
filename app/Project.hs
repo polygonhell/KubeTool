@@ -70,8 +70,8 @@ statefulSetFromProject env pr t = mkV1StatefulSet { v1StatefulSetMetadata = Just
     spec = mkV1StatefulSetSpec selector nme podTemplate
 
 
-serviceFromProject :: Environment -> Project -> V1Service
-serviceFromProject env proj = mkV1Service { v1ServiceMetadata = Just metadata
+serviceFromProject :: Environment -> Project -> Template -> V1Service
+serviceFromProject env proj t = mkV1Service { v1ServiceMetadata = Just metadata
                                           , v1ServiceSpec = Just spec
                                           }
   where
@@ -81,7 +81,7 @@ serviceFromProject env proj = mkV1Service { v1ServiceMetadata = Just metadata
                               , v1ObjectMetaNamespace = Just $ pack $ namespace env
                               , v1ObjectMetaLabels = Just labs
                               }
-    port = mkV1ServicePort 80
+    port = mkV1ServicePort $ head $ (ports proj) ++ (T.ports t)
     spec = mkV1ServiceSpec { v1ServiceSpecPorts = Just [ port ]
                            , v1ServiceSpecSelector = Just labs
                            }
