@@ -129,7 +129,7 @@ pushProject env config proj template = do
         return $ fmap (\x -> ()) $ copy ns pod baseDir toCopy dest
 
   -- todo build and restart
-  let runCmd = printf "echo '%s' > cmd && supervisorctl -s unix:///tmp/supervisor.sock start run" ("cd /project && " ++ (T.runDevCommand template)) :: String
+  let runCmd = printf "echo '%s' > cmd && supervisorctl -s unix:///tmp/supervisor.sock restart run" ("cd /project && " ++ (T.runDevCommand template)) :: String
   ran <- collapse $ fmap (\x -> execCmd ns x ["bash", "-c", runCmd]) podName
 
   print ran

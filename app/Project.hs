@@ -55,7 +55,7 @@ statefulSetFromProject env pr t = mkV1StatefulSet { v1StatefulSetMetadata = Just
                                   }
 
     
-    containerPorts = map mkV1ContainerPort (T.ports t)
+    containerPorts = map mkV1ContainerPort (T.ports t ++ ports pr)
     containerImage = T.buildContainer t
     runContainer = (mkV1Container (pack "podName")) { v1ContainerImage = Just $ pack containerImage
                                                     , v1ContainerName = pack "run"
@@ -81,7 +81,8 @@ serviceFromProject env proj t = mkV1Service { v1ServiceMetadata = Just metadata
                               , v1ObjectMetaNamespace = Just $ pack $ namespace env
                               , v1ObjectMetaLabels = Just labs
                               }
-    port = mkV1ServicePort $ head $ (ports proj) ++ (T.ports t)
-    spec = mkV1ServiceSpec { v1ServiceSpecPorts = Just [ port ]
+    servicePorts = map mkV1ServicePort ((T.ports t) ++ (ports proj))
+    -- port = mkV1ServicePort $ head $ (ports proj) ++ (T.ports t)
+    spec = mkV1ServiceSpec { v1ServiceSpecPorts = Just servicePorts
                            , v1ServiceSpecSelector = Just labs
                            }
