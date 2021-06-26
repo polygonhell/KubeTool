@@ -31,7 +31,7 @@ data Options = Options
 
 options :: Parser Options
 options =
-  Options <$> (optional $ strOption (long "name" <> short 'n' <> help "Name of the Project. Can be omitted if there is a single Project in the Configuration"))
+  Options <$> optional (strOption (long "name" <> short 'n' <> help "Name of the Project. Can be omitted if there is a single Project in the Configuration"))
     <*> flag False True (short 'b' <> long "foofoo")
 
 pushDevContainer :: Environment -> Config -> Project -> Template -> IO (Either String String)
@@ -40,7 +40,7 @@ pushDevContainer env config proj template = do
   let name = P.name proj
   podsO <- getPodsWithName ns name
   -- TODO deal with multiple instances case
-  putStrLn $ printf "podsO = %s" (show podsO)
+  -- putStrLn $ printf "podsO = %s" (show podsO)
   case podsO of
     Right (pod : []) -> do
       -- Check Pod is running

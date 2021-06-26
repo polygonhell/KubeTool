@@ -112,7 +112,7 @@ getOutput con = do
   foo <- readBlock con
   case foo of
     Close -> do
-      putStrLn "Closing connection"
+      -- putStrLn "Closing connection"
       return B.empty
     Bin bits -> do
       -- first byte designates the output channel
@@ -125,7 +125,7 @@ getOutput con = do
 -- Other issues - with Command optional arg not allowing multiple instantiations
 execCmd :: String -> String -> [String] -> IO (Either String String)
 execCmd namespaceStr podName cmd = do
-  putStrLn "execCmd"
+  -- putStrLn "execCmd"
   (mgr, kcfg) <- kubeClientConfig
   let name = Name (pack podName)
   let namespace = Namespace (pack namespaceStr)
