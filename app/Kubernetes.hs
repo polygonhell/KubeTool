@@ -12,15 +12,19 @@ import Text.Printf ( printf )
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.ByteString as B
 import Numeric (showHex)
+import Control.Monad (when)
 
 import KubeConfig ( kubeClientConfig )
-import Network.HTTP.Client (Request(..))
+import Network.HTTP.Client
+    ( Request(..),
+      BodyReader,
+      Response(..),
+      responseClose,
+      responseOpen,
+      withConnection )
 import qualified Data.CaseInsensitive as CI
-
-import Network.HTTP.Client ( Request(..), BodyReader)
 import qualified Network.URI.Encode as URI
 import Network.HTTP.Client.Internal (makeLengthReader, getConn, getResponse, Connection(..))
-import Network.HTTP.Client (Response(..), responseClose, responseOpen, withConnection)
 import Network.HTTP.Types (Status(..))
 
 import Data.Bits ( Bits(shiftL, (.&.)) )
@@ -44,43 +48,43 @@ hex = concatMap ((\x -> "0x"++x++" ") . flip showHex "") . B.unpack
 data WSblock = Close | Bin B.ByteString | Unknown
 
 readMore :: Int -> Connection -> IO B.ByteString
-readMore l con = 
-  if (l == 0) then
+readMore l con =
+  if l == 0 then
     return ""
   else do
     byteStr <- connectionRead con
     let count = B.length byteStr
-    if (count < l) then do
+    if count < l then do
       more <- readMore (l - count) con
-      return $ B.append byteStr $ more
+      return $ B.append byteStr more
     else
       return byteStr
 
 readBlock :: Connection -> IO WSblock
 readBlock con = do
-  byteStr <- connectionRead con 
+  byteStr <- connectionRead con
   let bytes = B.unpack byteStr
 
   -- putStrLn $ hex byteStr
   -- putStrLn $ C8.unpack byteStr
 
-  let opcode = (head bytes) .&. 0xf
+  let opcode = head bytes .&. 0xf
 
   case opcode of
     2 -> do
-      let fin = ((head bytes) .&. 0x80 == 0x80)
-      let mask = (bytes !! 1) .&. 0x80
-      let l1 = (bytes !! 1) .&. 0x7f
+      let fin = head bytes .&. 0x80 == 0x80
+      let mask = bytes !! 1 .&. 0x80
+      let l1 = bytes !! 1 .&. 0x7f
       let (len, bytes') = case l1 of
                           0x7e -> (l, d) where
-                            l = fromIntegral $ (((fromIntegral (bytes !! 2)) :: Word16) `shiftL` 8) + 
-                                              ((fromIntegral (bytes !! 3)) :: Word16) :: Int
+                            l = fromIntegral $ (fromIntegral (bytes !! 2) :: Word16) `shiftL` 8 +
+                                              (fromIntegral (bytes !! 3) :: Word16) :: Int
                             d = drop 4 bytes
                           0x7f -> (l, d) where
-                            l = fromIntegral $ (((fromIntegral (bytes !! 2)) :: Word32) `shiftL` 24) + 
-                                              (((fromIntegral (bytes !! 3)) :: Word32) `shiftL` 16) +
-                                              (((fromIntegral (bytes !! 4)) :: Word32) `shiftL` 8) +
-                                              ((fromIntegral (bytes !! 5)) :: Word32) :: Int
+                            l = fromIntegral $ (fromIntegral (bytes !! 2) :: Word32) `shiftL` 24 +
+                                              (fromIntegral (bytes !! 3) :: Word32) `shiftL` 16 +
+                                              (fromIntegral (bytes !! 4) :: Word32) `shiftL` 8 +
+                                              (fromIntegral (bytes !! 5) :: Word32) :: Int
                             d = drop 6 bytes
                           _ -> (fromIntegral l1, drop 2 bytes)
 
@@ -93,33 +97,33 @@ readBlock con = do
 
       let toReturn = B.drop len dataBytes
       -- putStrLn $ printf "Returning %d bytes to connection" (B.length toReturn)
-      if (B.length toReturn > 0) then connectionUnread con $ B.drop len dataBytes else return ()
+      when (B.length toReturn > 0) $ connectionUnread con $ B.drop len dataBytes
 
       let resBytes = B.take len dataBytes
 
       -- putStrLn $ hex resBytes
 
-      case fin of
-        True -> return $ Bin resBytes
-        False -> do
-          Bin moreBytes <- readBlock con
-          return $ Bin $ B.append resBytes moreBytes
+      if fin then return $ Bin resBytes else (do
+        Bin moreBytes <- readBlock con
+        return $ Bin $ B.append resBytes moreBytes)
     8 -> return Close
+    err -> do
+      putStrLn $ printf "Uknown opcode %d encountered while reading WebSocket Block" opcode
+      return Close
 
 
 getOutput :: Connection -> IO B.ByteString
 getOutput con = do
   foo <- readBlock con
   case foo of
-    Close -> do
-      -- putStrLn "Closing connection"
+    Close ->
       return B.empty
     Bin bits -> do
       -- first byte designates the output channel
       moreBits <- getOutput con
       return $ B.append (B.tail bits) moreBits
     _  -> error "unsupported packet seen"
-  
+
 
 -- Kubernetes library doesn't support the change to WebSockets, so we have to do  it the hardware
 -- Other issues - with Command optional arg not allowing multiple instantiations
@@ -130,8 +134,8 @@ execCmd namespaceStr podName cmd = do
   let name = Name (pack podName)
   let namespace = Namespace (pack namespaceStr)
 
-  let request =  (CoreV1.connectGetNamespacedPodExec (Accept MimeAny) name namespace) -&- (Stdout True) -&- (Stderr True)
-  let addHeaders r = r { 
+  let request =  CoreV1.connectGetNamespacedPodExec (Accept MimeAny) name namespace -&- Stdout True -&- Stderr True
+  let addHeaders r = r {
       requestHeaders = requestHeaders r ++ [
         (CI.mk "Host", host r),
         (CI.mk "Sec-WebSocket-Version", "13"),
@@ -159,7 +163,7 @@ execCmd namespaceStr podName cmd = do
                 return $ Left $ printf "Error in Exec -- %s" (show status)
 
   responseClose resp
-  return $ res
+  return res
   where
     toCommandQuery :: [String] -> B.ByteString
     toCommandQuery cs = C8.pack $ foldl toCommandQueryPart "" cs
@@ -176,27 +180,27 @@ getPodsWithName namespaceStr projectName = do
   (mgr, kcfg) <- kubeClientConfig
   let namespace = Namespace (pack namespaceStr)
   let selectorText = pack $ printf "app.kubernetes.io/name=%s,app.kubernetes.io/managed-by=%s" projectName managedBy
-  let request =  (CoreV1.listNamespacedPod (Accept MimeJSON) namespace) -&- (LabelSelector selectorText)
-  res0 <- dispatchMime mgr kcfg request 
+  let request =  CoreV1.listNamespacedPod (Accept MimeJSON) namespace -&- LabelSelector selectorText
+  res0 <- dispatchMime mgr kcfg request
   let res = case res0 of
               MimeResult (Left err) _ -> Left $ mimeError err
-              MimeResult (Right (V1PodList { v1PodListItems=pods })) _ -> Right pods
+              MimeResult (Right V1PodList { v1PodListItems=pods }) _ -> Right pods
 
-  return $ res
+  return res
 
 
 podName :: V1Pod -> String
-podName p = fromJust $ do 
+podName p = fromJust $ do
   meta <- v1PodMetadata p
   name <- v1ObjectMetaName meta
   return $ unpack name
 
-podLabels :: V1Pod -> (Map.Map String String)
+podLabels :: V1Pod -> Map.Map String String
 podLabels p = fromMaybe Map.empty $ do
   meta <- v1PodMetadata p
   labels <- v1ObjectMetaLabels meta
-  return $ Map.map (\b -> unpack b) labels
-  
+  return $ Map.map unpack labels
+
 
 
 -- TODO Copy Files - Done with exec
@@ -208,8 +212,8 @@ copy namespaceStr podName baseDir files dest = do
   let name = Name (pack podName)
   let namespace = Namespace (pack namespaceStr)
 
-  let request =  (CoreV1.connectGetNamespacedPodExec (Accept MimeAny) name namespace) -&- (Stdout True) -&- (Stderr True) -&- (Stdin True) -&- (Tty False)
-  let addHeaders r = r { 
+  let request =  CoreV1.connectGetNamespacedPodExec (Accept MimeAny) name namespace -&- Stdout True -&- Stderr True -&- Stdin True -&- Tty False
+  let addHeaders r = r {
       requestHeaders = requestHeaders r ++ [
         (CI.mk "Host", host r),
         (CI.mk "Sec-WebSocket-Version", "13"),
@@ -235,7 +239,7 @@ copy namespaceStr podName baseDir files dest = do
   let b3 = B.concat [B.pack [0x82, 0xFF], lenBs, B.pack [0x00, 0x00, 0x00, 0x00, 0x00], bytes]
 
   -- let b3 = (B.append (B.pack [0x82, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x81, 0x00, 0x00, 0x00, 0x00, 0x00])  bytes) 
-  let b4 = (B.pack [0x88, 0x00])
+  let b4 = B.pack [0x88, 0x00]
 
   -- Check we get the expected 101
   res <- case responseStatus resp of
@@ -249,7 +253,7 @@ copy namespaceStr podName baseDir files dest = do
                 return $ Left $ printf "Error in Exec -- %s" (show status)
 
   responseClose resp
-  return $ res
+  return res
   where
     toCommandQuery :: [String] -> B.ByteString
     toCommandQuery cs = C8.pack $ foldl toCommandQueryPart "" cs
@@ -263,11 +267,11 @@ listNamespaces = do
   res0 <- dispatchMime mgr kcfg (CoreV1.listNamespace (Accept MimeJSON))
   let res = case res0 of
             MimeResult (Left err) _ -> Left $ mimeError err
-            MimeResult (Right (V1NamespaceList { v1NamespaceListItems=namespaces })) _ -> Right namespaces
+            MimeResult (Right V1NamespaceList { v1NamespaceListItems=namespaces }) _ -> Right namespaces
   return res
 
 namespaceName :: V1Namespace -> String
-namespaceName p = fromJust $ do 
+namespaceName p = fromJust $ do
   meta <- v1NamespaceMetadata p
   name <- v1ObjectMetaName meta
   return $ unpack name
@@ -279,16 +283,16 @@ namespaceExists name = do
   let exists = do
               ns <- ns'
               let names = map namespaceName ns
-              if (elem name names) then return True else return False
+              if name `elem` names then return True else return False
   case exists of
     Right True -> return $ Right ()
-    Right False -> return $ Left $ (printf "Namespace %s does not exist" name :: String)
+    Right False -> return $ Left (printf "Namespace %s does not exist" name :: String)
     Left e -> return $ Left e
 
 
 
 
-createStatefulSet :: String -> V1StatefulSet -> IO (Either String (V1StatefulSet))
+createStatefulSet :: String -> V1StatefulSet -> IO (Either String V1StatefulSet)
 createStatefulSet ns ss = do
   (mgr, kcfg) <- kubeClientConfig
   let namespace = Namespace $ pack ns
@@ -299,7 +303,7 @@ createStatefulSet ns ss = do
         MimeResult (Right v1s) _ -> Right v1s
   return res
 
-createService :: String -> V1Service -> IO (Either String (V1Service))
+createService :: String -> V1Service -> IO (Either String V1Service)
 createService ns service = do
   (mgr, kcfg) <- kubeClientConfig
   let namespace = Namespace $ pack ns
