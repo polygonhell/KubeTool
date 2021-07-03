@@ -112,7 +112,7 @@ pushProject env config proj template = do
     Left _ -> return $ Right ()
     Right ([], _) -> return $ Right ()
     Right (toDelete, _) -> do
-      putStrLn $ printf "deleting container files\n  %s" (intercalate "\n  " toDelete)
+      putStrLn $ printf "deleting %d container files\n  %s" (length toDelete) (intercalate "\n  " toDelete)
       sequence do
         pod <- podName
         let cmd = printf "echo \"%s\" | xargs rm" $ intercalate " " toDelete :: String

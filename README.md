@@ -3,9 +3,45 @@
 Tool similar in scope to odo, to manage developing, packaging and deploying applications to kubernetes clusters.
 
 
+## Known issues
+
+* Only one template
+* Only supports a single project in the config
+* Only supports ClusterIP services
+* Changing a running project's name leaves the existing projects running when you use push
+
 ## Quickstart
 
-TODO
+### CreateReactApp Typescript template
+
+Use create-react-app to create a project.
+
+    npx create-react-app testproj --template typescript
+
+cd to the project
+
+    cd testproj
+
+Initialise the kube tool configuration (config.yaml).
+
+    kt init -n testproj -t TSCreateReactApp
+
+Create a namespace for the project in your current kubernetes cluster - this will also set the namespace for the project.
+
+     kt namespace create testproj
+
+Push project to the kubernetes cluster
+
+    kt push
+
+The first time push is called it may take a couple of minutes, it will create the StatefulSet and Service associated with the project, once the Pod is created it will copy the source files to the pod and run the build/launch command.
+Subsequent invocations to Push will just copy changed files and restart the build/launch command, and should be fast unless many large files have changed.
+
+Use kubectl port-forward to forward the project service locally
+
+    kubectl port-forward service/testproj 3000:3000 --namespace testproj
+
+Check the service is running by connecting a browser
 
 ## Overview
 

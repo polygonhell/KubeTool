@@ -1,12 +1,19 @@
 templates:
-- buildContainer: someURL
+- buildContainer: polygonhell/nodejs-kt:latest
+  runDevCommand: npm i && npm run start
   deployContainer: someOtherURL
-  name: Scala
-- buildContainer: someURL
-  deployContainer: someOtherURL
-  name: NodeJS
-name: nodejs
-author: Rob Povey
+  name: TSCreateReactApp
+  ports:
+  - 3000
+  sourceFiles:
+  - src
+  - public
+  - package.json
+  - package-lock.json
+  - tsconfig.json
+name: name
+author: null
 projects:
-- name: foobar
-  template: NodeJS
+- name: main
+  ports: []
+  template: TSCreateReactApp

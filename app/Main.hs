@@ -9,6 +9,8 @@ import qualified Cmd.Config as Config
 import qualified Cmd.Namespace as Namespace
 import qualified Cmd.Project as Project
 import qualified Cmd.Push as Push
+import qualified Cmd.Init as Init
+import qualified Template
 
 import Directory
 import qualified Directory as D
@@ -47,11 +49,12 @@ parse = do  (opts,runCmd) <-
                    do addCommand "create" "Create a K8's Namespace" Namespace.create (strArgument (metavar "name" <> help "Name of the namespace to be created"))
                       addCommand "delete" "Delete a K8's Namespace" Namespace.delete (strArgument (metavar "name" <> help "Name of the namespace to be deleted"))
                       addCommand "list" "list available K8's Namespaces" (const Namespace.list) (pure ())
-                 addCommand "project" "Delete a K8's Namespace" Project.runCmd $ simpleParser Project.options
+                 addCommand "project" "Project commands" Project.runCmd $ simpleParser Project.options
                    do addCommand "set" "set project configuration values" Project.set (strArgument (metavar "value" <> help "namespace=value name=value etc."))
                       addCommand "list" "list project configurations" (const Project.list) (pure ())
-                 addCommand "push" "Push project to K8's" Push.push Push.options
-                 
+                 addCommand "init" "Create the config.yaml file including templates" Init.init Init.options                 
+                 addCommand "templates" "list known templates" Template.templatesCmd Template.options                 
+                 addCommand "push" "Push project to K8's" Push.push Push.options                 
             runCmd
 
 

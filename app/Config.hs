@@ -1,4 +1,4 @@
-module Config (readConfig, writeConfig, updateConfig, Config(..)) where
+module Config (readConfig, writeConfig, updateConfig, configName, Config(..)) where
 
 
 import Data.Yaml (ToJSON, FromJSON, decodeFileThrow, encodeFile)
@@ -23,8 +23,7 @@ configName = "config.yaml"
 
 readConfig :: IO Config
 readConfig = do
-  config <- decodeFileThrow configName :: IO Config
-  return config
+  decodeFileThrow configName :: IO Config
 
 writeConfig :: Config -> IO Config
 writeConfig config = do

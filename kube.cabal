@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bdead9f7fec77bce559f49df5615fb7d3ae1631d8e4a710e5e54a3552edfff5f
+-- hash: 25362129d22040ede3eead3746d6fc0e9151e58b74d9d311ffbb419b4757ea6c
 
 name:           kube
 version:        0.1.0.0
@@ -54,6 +54,7 @@ library
     , tar
     , text
     , uri-encode
+    , utf8-string
     , yaml
   default-language: Haskell2010
 
@@ -62,9 +63,11 @@ executable kube-exe
   other-modules:
       Cmd.Config
       Cmd.Env
+      Cmd.Init
       Cmd.Namespace
       Cmd.Project
       Cmd.Push
+      Cmd.Templates.CreateReactApp
       Config
       Directory
       Environment
@@ -100,6 +103,7 @@ executable kube-exe
     , tar
     , text
     , uri-encode
+    , utf8-string
     , yaml
   default-language: Haskell2010
 
@@ -134,5 +138,6 @@ test-suite kube-test
     , tar
     , text
     , uri-encode
+    , utf8-string
     , yaml
   default-language: Haskell2010
