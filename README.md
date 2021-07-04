@@ -1,7 +1,17 @@
 # KubeTool
 
-Tool similar in scope to odo, to manage developing, packaging and deploying applications to kubernetes clusters.
+KubeTool is a tool that can be used for developing services on a remote kubernetes cluster.
 
+It's templates allow you a simple way to incrementally update the service on the target as you develop.
+
+It also supplies some helpers for managing Kubernetes namespaces, rather than having to do it through kubectl.
+
+TODO: ~~Once you are ready to release the project, it will generate a helm chart for you.~~
+
+## Currently supplied templates
+
+* TSCreateReactApp
+  * Typescript template for use with create react app - might work for js version
 
 ## Known issues
 
