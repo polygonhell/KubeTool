@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 25362129d22040ede3eead3746d6fc0e9151e58b74d9d311ffbb419b4757ea6c
+-- hash: e1ef04528ed86b9898a3c177d4318ca42bf14c6f948bd04cc8a1dcc2e69d4e2f
 
 name:           kube
 version:        0.1.0.0
@@ -42,6 +42,7 @@ library
     , cryptohash-md5
     , directory
     , filepath
+    , fsnotify
     , http-client
     , http-types
     , kubernetes-client >=0.2.0.0 && <0.3
@@ -67,7 +68,6 @@ executable kube-exe
       Cmd.Namespace
       Cmd.Project
       Cmd.Push
-      Cmd.Templates.CreateReactApp
       Config
       Directory
       Environment
@@ -90,6 +90,7 @@ executable kube-exe
     , cryptohash-md5
     , directory
     , filepath
+    , fsnotify
     , http-client
     , http-types
     , kube
@@ -125,6 +126,7 @@ test-suite kube-test
     , cryptohash-md5
     , directory
     , filepath
+    , fsnotify
     , http-client
     , http-types
     , kube

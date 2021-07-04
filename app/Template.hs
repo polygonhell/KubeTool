@@ -1,4 +1,4 @@
-module Template (Template(..), templatesCmd, templateBS, Wrapper(..), options) where
+module Template (Template(..), templatesCmd, defaultTemplates, options) where
 
 import Options.Applicative.Types (Parser)
 import Options.Applicative.Simple (optional)
@@ -7,7 +7,6 @@ import Data.ByteString (ByteString)
 
 import GHC.Generics
 
-import Cmd.Templates.CreateReactApp
 import Data.Yaml (ToJSON, FromJSON, decodeThrow)
 import Data.ByteString.UTF8 (fromString)
 data Template = Template { name :: !String
@@ -15,7 +14,8 @@ data Template = Template { name :: !String
                          , deployContainer :: !String
                          , ports :: ![Int]
                          , sourceFiles :: ![String]
-                         , runDevCommand :: !String
+                         , pushCommand :: !String
+                         , watchCommand :: Maybe String
                          } deriving (Show, Generic)
 
 instance FromJSON Template
@@ -31,19 +31,25 @@ options :: Parser Options
 options =
   Options <$> flag False True (short 'v' <> long "verbose")
 
-newtype Wrapper = Wrapper { templates :: [Template] }  deriving (Show, Generic)
-instance FromJSON Wrapper
+-- newtype Wrapper = Wrapper { templates :: [Template] }  deriving (Show, Generic)
+-- instance FromJSON Wrapper
 
-templateBS :: ByteString
-templateBS = fromString (unlines [
-  "templates:",
-  createReactApp
-  ])
+defaultTemplates = [
+  Template
+    "TSCreateReactApp"
+    "polygonhell/nodejs-kt:latest"
+    "someOtherURL"
+    [3000]
+    ["src", "public", "package.json", "package-lock.json", "tsconfig.json"]
+    "npm i && npm run start"
+    Nothing
+  ]
+
+
 
 templatesCmd :: Options -> IO (Either String ())
 templatesCmd opt = do
-  wrapper <- decodeThrow templateBS :: IO Wrapper
-  let names = map name (templates wrapper)
+  let names = map name defaultTemplates
   putStrLn "Available templates"
   mapM_ putStrLn names
-  return $ Right $ ()
+  return $ Right ()

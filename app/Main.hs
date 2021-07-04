@@ -55,6 +55,7 @@ parse = do  (opts,runCmd) <-
                  addCommand "init" "Create the config.yaml file including templates" Init.init Init.options                 
                  addCommand "templates" "list known templates" Template.templatesCmd Template.options                 
                  addCommand "push" "Push project to K8's" Push.push Push.options                 
+                 addCommand "watch" "Watch project for source cahnges" Push.watch Push.options                 
             runCmd
 
 

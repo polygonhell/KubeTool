@@ -31,10 +31,10 @@ init :: Options -> IO (Either String ())
 init opt = do
   exists <- doesFileExist C.configName
   if exists then return $ Left "Error: Config file exists and would be overwritten" else (do
-    wrapper <- decodeThrow T.templateBS :: IO T.Wrapper
-    let templateExists = templateName opt `elem` map T.name (T.templates wrapper)
+    let templates = T.defaultTemplates
+    let templateExists = templateName opt `elem` map T.name templates
     let project = P.Project (projectName opt) (templateName opt) []
-    let config = C.Config "name" Nothing [project] (T.templates wrapper)
+    let config = C.Config "name" Nothing [project] templates
     if templateExists then (do
       C.writeConfig config
       return $ Right ()

@@ -32,16 +32,16 @@ Create a namespace for the project in your current kubernetes cluster - this wil
 
 Push project to the kubernetes cluster
 
-    kt push
+    kt watch
 
-The first time push is called it may take a couple of minutes, it will create the StatefulSet and Service associated with the project, once the Pod is created it will copy the source files to the pod and run the build/launch command.
+The first time push or watch is called it may take a couple of minutes, it will create the StatefulSet and Service associated with the project, once the Pod is created it will copy the source files to the pod and run the build/launch command.
 Subsequent invocations to Push will just copy changed files and restart the build/launch command, and should be fast unless many large files have changed.
 
-Use kubectl port-forward to forward the project service locally
+In a different shell use kubectl port-forward to forward the project service locally
 
     kubectl port-forward service/testproj 3000:3000 --namespace testproj
 
-Check the service is running by connecting a browser
+Check the service is running by connecting a browser - you may have to wait a minute or two as the initial npm i completes.
 
 ## Overview
 
@@ -121,16 +121,23 @@ Supported names are currently
 
 * name
 
-
 ### push
 
 Push and launch a project on the cluster.
 
-Will create or update the projects StatefulSet, Service and Pods.
+Will create or update the projects StatefulSet, Service and Pods, any changed files will be copied to the k8's cluster and the pushCommand will be invoked.
 
     kt push
+
+### watch
+
+Push and launch a project on the cluster.
+
+Will create or update the projects StatefulSet, Service and Pods, copy changed files to the cluster and invoke the pushCommand. The files specified in the srcFiles part of the template are then monitored for changes, if any occur, changed files will be copied to the k8's cluster and if a watchCommand is specified it will be invoked on the pod.
+
+    kt watch
 
 ## Status
 
 Work in progress
-Currently NOT FUNCTIONAL
+Usable for simple projects

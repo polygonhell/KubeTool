@@ -1,6 +1,6 @@
 templates:
 - buildContainer: polygonhell/nodejs-kt:latest
-  runDevCommand: npm i && npm run start
+  pushCommand: npm i && npm run start
   deployContainer: someOtherURL
   name: TSCreateReactApp
   ports:
