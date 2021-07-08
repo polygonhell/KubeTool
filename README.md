@@ -15,6 +15,7 @@ TODO: ~~Once you are ready to release the project, it will generate a helm chart
 
 ## Known issues
 
+* Doesn't work with minikube - some cert issue
 * Only one template
 * Only supports a single project in the config
 * Only supports ClusterIP services
