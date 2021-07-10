@@ -40,7 +40,7 @@ defaultTemplates = [
     "polygonhell/nodejs-kt:latest"
     "someOtherURL"
     [3000]
-    ["src", "public", "package.json", "package-lock.json", "tsconfig.json"]
+    ["src", "public", "package.json", "tsconfig.json"]
     "npm i && npm run start"
     Nothing
   ]
