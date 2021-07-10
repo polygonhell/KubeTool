@@ -45,7 +45,7 @@ library
     , fsnotify
     , http-client
     , http-types
-    , kubernetes-client >=0.2.0.0 && <0.3
+    , kubernetes-client >=0.3.0.0 && <0.4
     , kubernetes-client-core
     , optparse-applicative >=0.14 && <2
     , optparse-simple >=0.1.1.2
@@ -94,7 +94,7 @@ executable kube-exe
     , http-client
     , http-types
     , kube
-    , kubernetes-client >=0.2.0.0 && <0.3
+    , kubernetes-client >=0.3.0.0 && <0.4
     , kubernetes-client-core
     , optparse-applicative >=0.14 && <2
     , optparse-simple >=0.1.1.2
@@ -106,6 +106,8 @@ executable kube-exe
     , uri-encode
     , utf8-string
     , yaml
+    , tls >=1.4.1 && < 1.5
+
   default-language: Haskell2010
 
 test-suite kube-test
@@ -142,4 +144,5 @@ test-suite kube-test
     , uri-encode
     , utf8-string
     , yaml
+    , tls >=1.4.1 && < 1.5
   default-language: Haskell2010

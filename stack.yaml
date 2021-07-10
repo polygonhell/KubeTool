@@ -40,8 +40,9 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 extra-deps: 
-- kubernetes-client-0.2.0.0
-- kubernetes-client-core-0.2.0.0
+# - kubernetes-client-0.2.0.0
+- kubernetes-client-0.3.0.0
+- kubernetes-client-core-0.3.0.0
 - oidc-client-0.4.0.1
 - hoauth2-1.8.9
 - jsonpath-0.1.0.2

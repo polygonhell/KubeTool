@@ -28,7 +28,7 @@ dependencies:
 - base >= 4.7 && < 5
 - optparse-applicative >= 0.14 && < 2
 - optparse-simple >= 0.1.1.2
-- kubernetes-client >= 0.2.0.0 && < 0.3
+- kubernetes-client >= 0.3.0.0 && < 0.4
 - stm
 - kubernetes-client-core
 - containers
@@ -49,6 +49,7 @@ dependencies:
 - process
 - fsnotify
 - filepath
+- tls
 
 
 library:

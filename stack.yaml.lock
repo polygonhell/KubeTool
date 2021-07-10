@@ -5,19 +5,19 @@
 
 packages:
 - completed:
-    hackage: kubernetes-client-0.2.0.0@sha256:69062d69676589fcda29c9e436d65ff1a4c56576f13de077a88bf7b31d341b0d,5263
+    hackage: kubernetes-client-0.3.0.0@sha256:20d3bccc0d715124be6c66cb018100cbfb6619fb1a6ae03446a19440321e1e09,5044
     pantry-tree:
-      size: 1864
-      sha256: e5f8a4c8ec825eb3e7c34cf33a7f05b6fdcee84c4729b50ef9d1b1cb8d512a3f
+      size: 2021
+      sha256: bc94ac790cbc427d766b15caac012be4671c34d11ab322be7f30c1156cab2d11
   original:
-    hackage: kubernetes-client-0.2.0.0
+    hackage: kubernetes-client-0.3.0.0
 - completed:
-    hackage: kubernetes-client-core-0.2.0.0@sha256:1e0865b4e23cfc0f7a81938ce4825be0b510b9a7cc65de64da19bd7698867938,6559
+    hackage: kubernetes-client-core-0.3.0.0@sha256:f2b7a38c786399bd20b654df34d21afbe8b7020762123378face585ed5c1266f,6405
     pantry-tree:
       size: 7208
-      sha256: 4c6924bb0aecac602c6f5813f41b5cfce68797173d23a0bb5ac08b75f0fb2dcd
+      sha256: 068e6b4dbd5192564413a5991db94a332afb701eb6b54f75bde597ba72d6e5d5
   original:
-    hackage: kubernetes-client-core-0.2.0.0
+    hackage: kubernetes-client-core-0.3.0.0
 - completed:
     hackage: oidc-client-0.4.0.1@sha256:d35d29351ea7db2aa0ecd4b4792b8bac4bf13f10c050e3c0cab0072b74acd996,3306
     pantry-tree:
