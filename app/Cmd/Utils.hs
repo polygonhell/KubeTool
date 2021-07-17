@@ -14,7 +14,7 @@ import Config (Config (..), readConfig)
 import Environment (Environment (..), readEnvironment)
 import qualified Project as P
 import qualified Template as T
-import Kubernetes.OpenAPI.Model (V1Pod(..), v1PodStatusPhase, v1ObjectMetaName)
+import Kubernetes.OpenAPI.Model (V1Pod(..), v1PodStatusPhase, v1ObjectMetaName, v1ObjectMetaNamespace)
 import Kubernetes (getPodsWithName)
 import Control.Concurrent (threadDelay)
 
@@ -69,3 +69,17 @@ withRunningPod :: String -> (V1Pod -> IO (Either String a)) -> IO (Either String
 withRunningPod projectName fn = 
   withEnvironment $ \env -> 
   withConfig $ \config -> withRunningPodI env config projectName fn
+
+
+withRunningPodNames :: String -> (String -> String -> IO (Either String a)) -> IO (Either String a)
+withRunningPodNames projectName fn = withRunningPod projectName $ \pod-> do
+  let detailsO = do
+        spec <- v1PodMetadata pod
+        ns <- v1ObjectMetaNamespace spec
+        name <- v1ObjectMetaName spec
+        return (unpack ns, unpack name)
+  case detailsO of
+    Nothing -> return $ Left "Couldn't get pod details"
+    Just (ns, podName) -> fn ns podName
+
+
