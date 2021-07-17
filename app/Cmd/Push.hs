@@ -24,6 +24,7 @@ import Template (Template)
 import qualified Template as T
 import Text.Printf (printf)
 import Cmd.Utils
+import qualified Cmd.Logs as Logs
 
 import System.FSNotify
 import System.FilePath ((</>), splitPath, splitDirectories)
@@ -237,4 +238,4 @@ watchFS env c p t = withManager \mgr -> do
   config <- readConfig
   cwd <- getCurrentDirectory
   watchTree mgr "." (watchPredicate cwd t) (watchAction env c p t)
-  forever $ threadDelay 1000000
+  Logs.logs $ Logs.Options (Just (P.name p)) (Just 20) True
