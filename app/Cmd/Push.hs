@@ -23,6 +23,7 @@ import System.Directory (getCurrentDirectory)
 import Template (Template)
 import qualified Template as T
 import Text.Printf (printf)
+import Cmd.Utils
 
 import System.FSNotify
 import System.FilePath ((</>), splitPath, splitDirectories)
@@ -146,8 +147,6 @@ updateFiles env config proj template = do
 
 
 
-
-
 pushProject :: Environment -> Config -> Project -> Template -> IO (Either String String)
 pushProject env config proj template = do
   details <- updateFiles env config proj template
@@ -178,61 +177,43 @@ watchProject env config proj template = do
         return $ Right "No Watch Command"
 
 
-
-  -- -- todo build and restart
-  -- let runCmd = printf "echo '%s' > cmd && supervisorctl -s unix:///tmp/supervisor.sock restart run" ("cd /project && " ++ T.pushommand template) :: String
-  -- ran <- collapse $ fmap (\x -> execCmd ns x ["bash", "-c", runCmd]) podName
-  -- print ran
-  -- return ran
-
 push :: Options -> IO (Either String ())
-push opt = do
-  env <- readEnvironment
-  config <- readConfig
-  let ps' = case projectName opt of
-        Nothing -> Right $ projects config
-        Just n -> case find (\x -> P.name x == n) (projects config) of
-          Nothing -> Left (printf "Bad Project Name %s" n :: String)
-          Just p -> Right [p]
+push opt = withEnvironment $ \env ->
+  withConfig $ \config -> do
+    let ps' = case projectName opt of
+          Nothing -> Right $ projects config
+          Just n -> case find (\x -> P.name x == n) (projects config) of
+            Nothing -> Left (printf "Bad Project Name %s" n :: String)
+            Just p -> Right [p]
 
-  case ps' of
-    Left e -> return $ Left e
-    Right ps -> do
-      let ts = templates config
-      let foo = mapM (\p -> fmap (\t -> (p, t)) (find (\t -> T.name t == P.template p) ts)) ps
-      case mapM (\p -> fmap (\t -> (p, t)) (find (\t -> T.name t == P.template p) ts)) ps of
-        Just xs -> do
-          putStrLn $ printf "Pushing projects %s" $ intercalate ", " (map P.name ps)
-          foo <- mapM (uncurry (pushProject env config)) xs
-          return $ (\x -> ()) <$> sequence foo
-        Nothing -> return $ Left "Referenced template missing"
+    case ps' of
+      Left e -> return $ Left e
+      Right ps -> do
+        let ts = templates config
+        let foo = mapM (\p -> fmap (\t -> (p, t)) (find (\t -> T.name t == P.template p) ts)) ps
+        case mapM (\p -> fmap (\t -> (p, t)) (find (\t -> T.name t == P.template p) ts)) ps of
+          Just xs -> do
+            putStrLn $ printf "Pushing projects %s" $ intercalate ", " (map P.name ps)
+            foo <- mapM (uncurry (pushProject env config)) xs
+            return $ () <$ sequence foo
+          Nothing -> return $ Left "Referenced template missing"
 
 
 -- TODO actually watch the filesystem
 watch :: Options -> IO (Either String ())
-watch opt = do
-  env <- readEnvironment
-  config <- readConfig
-  let prjs = projects config
-  let p' = case projectName opt of
-        Nothing -> if length prjs == 1 then Right (head prjs) else Left "Must Specify project name if config contains more than 1"
-        Just n -> case find (\x -> P.name x == n) prjs of
-          Nothing -> Left (printf "Bad Project Name %s" n :: String)
-          Just p -> Right p
-
-  case p' of
-    Left e -> return $ Left e
-    Right p -> do
-      let ts = templates config
-      let foo = find (\t -> T.name t == P.template p) ts
-      case foo of
-        Just t -> do
-          putStrLn $ printf "Pushing project %s" $ P.name p
-          -- push the Project
-          pushProject env config p t
-          -- Then watch the filesystem
-          watchFS env config p t
-        Nothing -> return $ Left "Referenced template missing"
+watch opt = withEnvironment $ \env ->
+  withConfig $ \config ->
+  withProject (projectName opt) $ \p -> do
+    let ts = templates config
+    let foo = find (\t -> T.name t == P.template p) ts
+    case foo of
+      Just t -> do
+        putStrLn $ printf "Pushing project %s" $ P.name p
+        -- push the Project
+        pushProject env config p t
+        -- Then watch the filesystem
+        watchFS env config p t
+      Nothing -> return $ Left "Referenced template missing"
 
 
 

@@ -66,6 +66,7 @@ Where context is one of
 * namespace
 * project
 * push
+* logs
 
 ### config
 
@@ -146,6 +147,13 @@ Push and launch a project on the cluster.
 Will create or update the projects StatefulSet, Service and Pods, copy changed files to the cluster and invoke the pushCommand. The files specified in the srcFiles part of the template are then monitored for changes, if any occur, changed files will be copied to the k8's cluster and if a watchCommand is specified it will be invoked on the pod.
 
     kt watch
+
+
+### logs
+
+Display logs for running project
+
+    kt logs
 
 ## Status
 

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Kubernetes (managedBy, execCmd, copy, getPodsWithName, podName, podLabels, listNamespaces, namespaceName, namespaceExists, createService, createStatefulSet) where
+module Kubernetes (readBlock, WSblock(..), managedBy, withExecCmdConnection, execCmd, copy, getPodsWithName, podName, podLabels, listNamespaces, namespaceName, namespaceExists, createService, createStatefulSet) where
 
 import qualified Kubernetes.OpenAPI.API.CoreV1 as CoreV1
 import qualified Kubernetes.OpenAPI.API.AppsV1 as AppsV1
@@ -125,11 +125,10 @@ getOutput con = do
     _  -> error "unsupported packet seen"
 
 
--- Kubernetes library doesn't support the change to WebSockets, so we have to do  it the hardware
--- Other issues - with Command optional arg not allowing multiple instantiations
-execCmd :: String -> String -> [String] -> IO (Either String String)
-execCmd namespaceStr podName cmd = do
-  -- putStrLn "execCmd"
+
+withExecCmdConnection :: String -> String -> [String] -> (Connection -> IO (Either String a)) -> IO (Either String a)
+withExecCmdConnection namespaceStr podName cmd fn = do
+    -- putStrLn "execCmd"
   (mgr, kcfg) <- kubeClientConfig
   let name = Name (pack podName)
   let namespace = Namespace (pack namespaceStr)
@@ -156,11 +155,10 @@ execCmd namespaceStr podName cmd = do
   res <- case responseStatus resp of
               Status 101 _ -> do
                 -- Pull the stdout/error bytes off the wire
-                out <- withConnection rq mgr getOutput
-                return $ Right $ C8.unpack out
+                withConnection rq mgr fn
               status -> do
-                print status
-                return $ Left $ printf "Error in Exec -- %s" (show status)
+                putStrLn $ printf "Unknown Status returned in withExecCmdConnection - %s" (show status)
+                return $ Left $ printf "Error in withExecCmdConnection -- %s" (show status)
 
   responseClose resp
   return res
@@ -169,6 +167,15 @@ execCmd namespaceStr podName cmd = do
     toCommandQuery cs = C8.pack $ foldl toCommandQueryPart "" cs
     toCommandQueryPart :: String -> String -> String
     toCommandQueryPart a b = a ++ printf "&command=%s" (URI.encode b)
+
+
+-- Kubernetes library doesn't support the change to WebSockets, so we have to do  it the hardware
+-- Other issues - with Command optional arg not allowing multiple instantiations
+execCmd :: String -> String -> [String] -> IO (Either String String)
+execCmd namespaceStr podName cmd = 
+  withExecCmdConnection namespaceStr podName cmd $ \connection -> do
+    out <- getOutput connection
+    return $ Right $ C8.unpack out
 
 
 managedBy :: String
