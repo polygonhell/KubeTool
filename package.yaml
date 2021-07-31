@@ -36,7 +36,10 @@ dependencies:
 - bytestring
 - utf8-string
 - http-client
+- http-client-tls
 - http-types
+- connection
+- network
 - uri-encode
 - text
 - yaml

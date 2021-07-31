@@ -51,6 +51,7 @@ logOutput con = do
       return ()
     Bin bits -> do
       -- first byte designates the output channel
+      putStrLn $ printf "Read %d bytes" (C8.length bits)
       putStr $ C8.unpack bits
       logOutput con
     _  -> error "unsupported packet seen"

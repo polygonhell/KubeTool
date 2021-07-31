@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 426829db85e3c88c1964f2748d4cd531906903bcbcfb3236ec01dcf8c4a76da5
+-- hash: eb95b41559106bf7516216e054be781b007c1fdf5e2aef6cf52d5cd55efae419
 
 name:           kube
 version:        0.1.0.0
@@ -38,15 +38,18 @@ library
     , base >=4.7 && <5
     , bytestring
     , case-insensitive
+    , connection
     , containers
     , cryptohash-md5
     , directory
     , filepath
     , fsnotify
     , http-client
+    , http-client-tls
     , http-types
     , kubernetes-client >=0.3.0.0 && <0.4
     , kubernetes-client-core
+    , network
     , optparse-applicative >=0.14 && <2
     , optparse-simple >=0.1.1.2
     , process
@@ -89,16 +92,19 @@ executable kube-exe
     , base >=4.7 && <5
     , bytestring
     , case-insensitive
+    , connection
     , containers
     , cryptohash-md5
     , directory
     , filepath
     , fsnotify
     , http-client
+    , http-client-tls
     , http-types
     , kube
     , kubernetes-client >=0.3.0.0 && <0.4
     , kubernetes-client-core
+    , network
     , optparse-applicative >=0.14 && <2
     , optparse-simple >=0.1.1.2
     , process
@@ -126,16 +132,19 @@ test-suite kube-test
     , base >=4.7 && <5
     , bytestring
     , case-insensitive
+    , connection
     , containers
     , cryptohash-md5
     , directory
     , filepath
     , fsnotify
     , http-client
+    , http-client-tls
     , http-types
     , kube
     , kubernetes-client >=0.3.0.0 && <0.4
     , kubernetes-client-core
+    , network
     , optparse-applicative >=0.14 && <2
     , optparse-simple >=0.1.1.2
     , process

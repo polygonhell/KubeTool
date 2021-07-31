@@ -4,8 +4,12 @@ module KubeConfig(kubeClientConfig) where
 import System.Directory
 import Control.Concurrent.STM (atomically, newTVarIO)
 import Data.Map as Map
-import Kubernetes.Client      (getContext, KubeConfigSource (..), setMasterURI, applyAuthSettings, newManager, addCACertData, addCACertFile, tlsValidation)
-import Network.HTTP.Client (Manager)
+import Kubernetes.Client      (getContext, KubeConfigSource (..), setMasterURI, applyAuthSettings, addCACertData, addCACertFile, tlsValidation)
+import Network.HTTP.Client (Manager, newManager, ManagerSettings (managerRawConnection), rawConnectionModifySocket)
+import Network.HTTP.Client.TLS (mkManagerSettings)
+import Network.Connection ( TLSSettings(..) )
+import Network.Socket ( setSocketOption, SocketOption(..) )
+-- import Network.Socket.Options (SockOpt)
 import Kubernetes.OpenAPI (KubernetesClientConfig)
 import Kubernetes.OpenAPI.Core (newConfig)
 import Kubernetes.Client.Auth.OIDC (OIDCCache)
@@ -18,8 +22,9 @@ import Data.Function ( (&) )
 import Data.Yaml
 import System.FilePath
 
-
-
+keepIdle = CustomSockOpt  (6, 4)
+keepInterval = CustomSockOpt (6, 5)
+keepCount = CustomSockOpt (6, 6)
 
 {-|
   Creates 'NH.Manager' and 'K.KubernetesClientConfig' for a given
@@ -35,13 +40,27 @@ mkKubeClientConfig oidcCache (KubeConfigFile f) = do
     server
     <$> getCluster kubeConfig
     &   either (const $ pure "localhost:8080") return
-  tlsParams <- configureTLSParams kubeConfig (takeDirectory f) & fmap disableServerNameValidation
+  
+  tlsParams <- configureTLSParams kubeConfig (takeDirectory f) 
+    & fmap disableServerNameValidation
+
   clientConfig <- newConfig & fmap (setMasterURI masterURI) 
   (tlsParamsWithAuth, clientConfigWithAuth) <- case getAuthInfo kubeConfig of
     Left _ -> return (tlsParams, clientConfig)
     Right (_, auth) ->
       applyAuthSettings oidcCache auth (tlsParams, clientConfig)
-  mgr <- newManager tlsParamsWithAuth
+
+  let settings = mkManagerSettings (TLSSettings tlsParamsWithAuth) Nothing
+  let modifySO = do
+        rawConnectionModifySocket $ \s -> do
+          setSocketOption s keepIdle 11
+          setSocketOption s keepInterval 10
+          setSocketOption s keepCount 2
+          setSocketOption s KeepAlive 1
+
+  let settingsWithSO = settings { managerRawConnection = modifySO }
+
+  mgr <- newManager settingsWithSO
   return (mgr, clientConfigWithAuth)
   
 -- mkKubeClientConfig _ KubeConfigCluster = mkInClusterClientConfig

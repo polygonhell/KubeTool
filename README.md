@@ -148,7 +148,6 @@ Will create or update the projects StatefulSet, Service and Pods, copy changed f
 
     kt watch
 
-
 ### logs
 
 Display logs for running project

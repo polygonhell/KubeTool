@@ -37,6 +37,8 @@ import Data.ByteString.Lazy (toStrict)
 import Data.ByteString.Builder (word64BE, toLazyByteString)
 import qualified Codec.Archive.Tar as Tar
 
+import Debug.Trace (traceM)
+
 
 
 
@@ -54,6 +56,7 @@ readMore l con =
   else do
     byteStr <- connectionRead con
     let count = B.length byteStr
+    traceM $ printf "readMore read %d bytes" count
     if count < l then do
       more <- readMore (l - count) con
       return $ B.append byteStr more
@@ -63,6 +66,7 @@ readMore l con =
 readBlock :: Connection -> IO WSblock
 readBlock con = do
   byteStr <- connectionRead con
+  traceM $ printf "readBlock read %d bytes" (B.length byteStr)
   let bytes = B.unpack byteStr
 
   -- putStrLn $ hex byteStr
@@ -106,7 +110,9 @@ readBlock con = do
       if fin then return $ Bin resBytes else (do
         Bin moreBytes <- readBlock con
         return $ Bin $ B.append resBytes moreBytes)
-    8 -> return Close
+    8 -> do
+      putStrLn "Returning Close"
+      return Close
     err -> do
       putStrLn $ printf "Uknown opcode %d encountered while reading WebSocket Block" opcode
       return Close
@@ -149,6 +155,8 @@ withExecCmdConnection namespaceStr podName cmd fn = do
   initRequest' <- _toInitRequest kcfg request
   let initRequest = modifyInitRequest initRequest' addHeaders
   let (InitRequest rq) = initRequest
+
+  traceM $ printf "Request = %s" (show rq) 
 
   resp <- responseOpen rq mgr
   -- Check we get the expected 101
